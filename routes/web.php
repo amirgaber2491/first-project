@@ -1,5 +1,7 @@
 <?php
 
+use App\Events\YoutubeViewer;
+use App\Models\Video;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,7 +24,27 @@ Auth::routes(['verify' => true]);
 Route::get('/home', 'HomeController@index')->name('home')->middleware('verified');
 
 
-Route::get('test2', function (){
+Route::get('redirect/{service}', 'SocialiteController@redirect');
+Route::get('callback/{service}', 'SocialiteController@callback');
 
-    return view('auth.verify');
+Route::group(['prefix'=>LaravelLocalization::setLocale(),'middleware' => [ 'localeSessionRedirect', 'localizationRedirect', 'localeViewPath' ] ], function (){
+    Route::get('youtube/viewer', function (){
+        $video = Video::first();
+        event(new YoutubeViewer($video));
+        return view('youtubeviewer', compact('video'));
+    });
+    Route::group(['prefix'=>'offer'], function (){
+        Route::get('create', 'Offer@create');
+        Route::post('store', 'Offer@store')->name('offer.store');
+        Route::get('index', 'Offer@index')->name('offer.index');
+        Route::get('edit/{id}', 'Offer@edit')->name('offer.edit');
+        Route::patch('update/{id}', 'Offer@update')->name('offer.update');
+    });
+
 });
+
+
+
+Route::resource('offer/ajax', 'OfferAjaxController');
+
+
